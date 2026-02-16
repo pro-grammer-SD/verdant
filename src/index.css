@@ -45,7 +45,6 @@
   h6 {
     font-family: var(--font-serif);
     font-weight: 500;
-    /* EB Garamond looks better at medium weights */
   }
 }
 
@@ -104,5 +103,43 @@
     font-family: var(--font-serif);
     font-style: italic;
     letter-spacing: 0.05em;
+  }
+
+  /* Billion-Dollar Glow Utilities */
+  .neon-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .neon-shimmer::after {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg,
+        transparent 20%,
+        rgba(17, 212, 17, 0.1) 45%,
+        rgba(17, 212, 17, 0.3) 50%,
+        rgba(17, 212, 17, 0.1) 55%,
+        transparent 80%);
+    animation: shimmer-sweep 4s infinite linear;
+    transform: rotate(25deg);
+    pointer-events: none;
+  }
+
+  @keyframes shimmer-sweep {
+    0% {
+      transform: translate(-30%, -30%) rotate(25deg);
+    }
+
+    100% {
+      transform: translate(30%, 30%) rotate(25deg);
+    }
+  }
+
+  .premium-glow {
+    filter: drop-shadow(0 0 15px rgba(17, 212, 17, 0.4));
   }
 }
