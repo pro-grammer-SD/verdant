@@ -1,8 +1,7 @@
 import { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
 import {
-    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    LineChart, Line, Legend
+    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { Text } from '../components/primitives/Text';
 import { Typewriter } from '../components/motion/Typewriter';

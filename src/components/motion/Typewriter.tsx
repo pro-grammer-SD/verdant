@@ -15,15 +15,14 @@ export const Typewriter = ({
     delay = 0,
     speed = 0.05,
     className,
-    onComplete,
-    glitchDuration = 1000
-}: TypewriterProps) => {
+    onComplete
+}: Omit<TypewriterProps, 'glitchDuration'>) => {
     const [displayText, setDisplayText] = useState('');
     const [isComplete, setIsComplete] = useState(false);
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+';
 
     useEffect(() => {
-        let timeout: NodeJS.Timeout;
+        let timeout: ReturnType<typeof setTimeout>;
         let currentText = '';
         let index = 0;
 

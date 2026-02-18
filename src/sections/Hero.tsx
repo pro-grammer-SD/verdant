@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Text } from '../components/primitives/Text';
 import { Button } from '../components/primitives/Button';
