@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence, useSpring, useMotionValue, useTransform } from 'framer-motion';
+import { useRef, useEffect } from 'react';
+import { motion, AnimatePresence, useSpring } from 'framer-motion';
 import { Text } from '../components/primitives/Text';
 import { Button } from '../components/primitives/Button';
 import { RotateCw, RotateCcw } from 'lucide-react';

@@ -1,13 +1,14 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState } from 'react';
+import type { ReactNode } from 'react';
 import { contentConfig } from '../config/content';
 
 interface ProductContextType {
     selectedVariant: typeof contentConfig.product.variants[0];
-    setSelectedVariant: (variant: typeof contentConfig.product.variants[0]) => void;
+    setSelectedVariant: React.Dispatch<React.SetStateAction<typeof contentConfig.product.variants[0]>>;
     rotation: number;
-    setRotation: (rotation: number) => void;
+    setRotation: React.Dispatch<React.SetStateAction<number>>;
     hoveredFeature: number | null;
-    setHoveredFeature: (id: number | null) => void;
+    setHoveredFeature: React.Dispatch<React.SetStateAction<number | null>>;
 }
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined);
