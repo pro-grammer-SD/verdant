@@ -24,8 +24,8 @@ export const Text = ({
         headline: "font-serif text-[clamp(2.5rem,8vw,5rem)] leading-[1.1] tracking-tight italic",
         title: "font-serif text-[clamp(1.25rem,4vw,2rem)] leading-tight italic",
         body: "font-serif text-base md:text-lg leading-relaxed text-white/70 italic",
-        caption: "font-sans text-[10px] uppercase tracking-[0.3em] font-bold",
-        ui: "font-sans text-xs font-medium tracking-wider",
+        caption: "font-sans text-[10px] uppercase tracking-[0.5em] font-black",
+        ui: "font-sans text-[11px] font-black tracking-[0.2em] uppercase",
         "label-serif": "font-serif italic text-sm tracking-wide text-[var(--color-primary)]",
         quote: "font-serif italic text-2xl md:text-3xl leading-relaxed text-white/90"
     };

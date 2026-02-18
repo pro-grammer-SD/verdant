@@ -1,111 +1,253 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence, useSpring, useMotionValue, useTransform } from 'framer-motion';
 import { Text } from '../components/primitives/Text';
 import { Button } from '../components/primitives/Button';
+import { RotateCw, RotateCcw } from 'lucide-react';
+import { contentConfig } from '../config/content';
+import { motionConfig } from '../config/motion';
+import { useProduct } from '../context/ProductContext';
 import { cn } from '../lib/utils';
-import { RotateCcw, RotateCw } from 'lucide-react';
-
-const COLORS = [
-    { id: 'forest', name: 'Forest Green', hex: '#11d411', themeColor: 'emerald' },
-    { id: 'obsidian', name: 'Obsidian Black', hex: '#121212', themeColor: 'zinc' },
-    { id: 'arctic', name: 'Arctic White', hex: '#f6f8f6', themeColor: 'stone' }
-];
 
 export const Viewer = () => {
-    const [selectedColor, setSelectedColor] = useState(COLORS[0]);
+    const {
+        selectedVariant,
+        setSelectedVariant,
+        rotation,
+        setRotation,
+        hoveredFeature,
+        setHoveredFeature
+    } = useProduct();
+
+    const containerRef = useRef<HTMLDivElement>(null);
+    const isDragging = useRef(false);
+    const startX = useRef(0);
+    const startRotation = useRef(0);
+
+    // Smooth rotation spring
+    const rotationSpring = useSpring(rotation, {
+        stiffness: 120,
+        damping: 20,
+        mass: 1
+    });
+
+    useEffect(() => {
+        rotationSpring.set(rotation);
+    }, [rotation]);
+
+    // Drag interaction logic
+    const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
+        isDragging.current = true;
+        startX.current = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        startRotation.current = rotation;
+        document.body.style.cursor = 'grabbing';
+    };
+
+    const handleDragMove = (e: MouseEvent | TouchEvent) => {
+        if (!isDragging.current) return;
+
+        const currentX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        const diff = (currentX - startX.current) / 10;
+        const nextRotation = (startRotation.current - diff) % 360;
+        setRotation(nextRotation < 0 ? 360 + nextRotation : nextRotation);
+    };
+
+    const handleDragEnd = () => {
+        isDragging.current = false;
+        document.body.style.cursor = 'auto';
+    };
+
+    useEffect(() => {
+        window.addEventListener('mousemove', handleDragMove);
+        window.addEventListener('mouseup', handleDragEnd);
+        window.addEventListener('touchmove', handleDragMove);
+        window.addEventListener('touchend', handleDragEnd);
+        return () => {
+            window.removeEventListener('mousemove', handleDragMove);
+            window.removeEventListener('mouseup', handleDragEnd);
+            window.removeEventListener('touchmove', handleDragMove);
+            window.removeEventListener('touchend', handleDragEnd);
+        };
+    }, [rotation]);
+
+    const rotateBy = (amount: number) => {
+        setRotation((prev) => (prev + amount) % 360);
+    };
+
+    const renderExplodedModel = () => {
+        const isExploded = hoveredFeature !== null;
+
+        // Use rotation to drive a "pseudo-3D" effect using CSS transforms
+        // In a real production app, we would swap images from a 36-frame sequence here.
+        // For this template, we use high-fidelity CSS perspective rotation.
+
+        return (
+            <div className="relative w-full h-full flex items-center justify-center p-12 perspective-2000">
+                <motion.div
+                    style={{ rotateY: rotationSpring }}
+                    className="relative w-full max-w-[750px] aspect-[4/3] flex items-center justify-center preserve-3d"
+                >
+                    {/* Outsole Layer */}
+                    <motion.img
+                        animate={{
+                            y: hoveredFeature === 2 ? 80 : 0,
+                            z: hoveredFeature === 2 ? 100 : 0,
+                            opacity: isExploded && hoveredFeature !== 2 ? 0.3 : 1,
+                        }}
+                        transition={{ duration: 0.8, ease: motionConfig.curves.apple }}
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSKLjUFvaU1rLUzAJcDDRURe3Gw6ImEbdre8VFKCtF8rf23yK2LsyIpmg8ayb-gVHRZWVZK8wxB_MbVcp_Dgc3DVxIG_QDgq3HlX7wKyxlsLS72QOGpe5mMVD6iNz-SWpuxkYbBBgpRn67w8qH2hTD25hE2cx5fir_L7OY4gE-p7yxkLqZOX4D8flUfaUq1Tbb8oWyuKmJ1Q1zcpn8snCqoUtF1aj3kc8ZvPfKJH3zPnTV91UqiPghUVD6NbPn_y6yYCMM3szCm5nK"
+                        className="absolute w-full z-10 brightness-[0.9] drop-shadow-2xl translate-z-0"
+                        style={{ filter: selectedVariant.id === 'umber' ? 'hue-rotate(220deg) brightness(0.6)' : selectedVariant.id === 'phantom' ? 'grayscale(1)' : 'none' }}
+                    />
+
+                    {/* Midsole / Tech Layer */}
+                    <motion.div
+                        animate={{
+                            opacity: isExploded ? 0.8 : 0,
+                            y: hoveredFeature === 1 ? -40 : 0,
+                            z: isExploded ? 50 : 0
+                        }}
+                        className="absolute inset-x-0 h-1 bg-[var(--color-primary)]/20 blur-xl z-15"
+                    />
+
+                    {/* Upper Layer */}
+                    <motion.img
+                        animate={{
+                            y: hoveredFeature === 1 ? -80 : 0,
+                            z: hoveredFeature === 1 ? 150 : 50,
+                            opacity: isExploded && hoveredFeature !== 1 ? 0.3 : 1,
+                        }}
+                        transition={{ duration: 0.8, ease: motionConfig.curves.apple }}
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSKLjUFvaU1rLUzAJcDDRURe3Gw6ImEbdre8VFKCtF8rf23yK2LsyIpmg8ayb-gVHRZWVZK8wxB_MbVcp_Dgc3DVxIG_QDgq3HlX7wKyxlsLS72QOGpe5mMVD6iNz-SWpuxkYbBBgpRn67w8qH2hTD25hE2cx5fir_L7OY4gE-p7yxkLqZOX4D8flUfaUq1Tbb8oWyuKmJ1Q1zcpn8snCqoUtF1aj3kc8ZvPfKJH3zPnTV91UqiPghUVD6NbPn_y6yYCMM3szCm5nK"
+                        className="absolute w-full z-20 mix-blend-screen opacity-100 translate-z-[50px]"
+                        style={{ filter: selectedVariant.id === 'umber' ? 'hue-rotate(220deg) brightness(0.8)' : selectedVariant.id === 'phantom' ? 'grayscale(1)' : 'none' }}
+                    />
+                </motion.div>
+            </div>
+        );
+    };
 
     return (
-        <section className="py-64 bg-[var(--color-surface-900)] overflow-hidden relative">
-            {/* Background Glows */}
-            <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[var(--color-primary)]/10 rounded-full blur-[120px] -z-0" />
-            <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-[var(--color-primary)]/5 rounded-full blur-[100px] -z-0" />
-
-            <div className="max-w-7xl mx-auto px-6 grid grid-cols-12 gap-8 items-center relative z-10">
+        <section id="viewer" ref={containerRef} className="min-h-screen py-48 bg-[var(--color-surface-900)] overflow-hidden flex flex-col items-center">
+            <div className="max-w-7xl mx-auto px-8 w-full grid grid-cols-12 gap-16 items-center">
 
                 {/* Left Side: Content */}
                 <div className="col-span-12 lg:col-span-4 space-y-12">
-                    <div className="space-y-4">
-                        <Text variant="caption" className="text-[var(--color-primary)]">Engineered for the Elements</Text>
-                        <Text variant="headline" className="leading-tight text-white block">
-                            The New Horizon of <span className="text-[var(--color-primary)]">Performance</span>
+                    <div className="space-y-12">
+                        <Text variant="caption" className="text-[var(--color-primary)] tracking-[0.5em] uppercase">Precision Engineering</Text>
+                        <Text variant="headline" className="text-white leading-[0.9] block italic">
+                            The New <br /> Horizon of <span className="text-[var(--color-primary)]">Unity</span>
                         </Text>
                     </div>
 
-                    {/* Colorway Toggle */}
-                    <div className="space-y-6">
-                        <Text variant="ui" className="text-white/40 uppercase tracking-[0.4em] font-black">Select Atmosphere</Text>
-                        <div className="flex gap-4">
-                            {COLORS.map((color) => (
+                    {/* Colorway Selection */}
+                    <div className="space-y-12">
+                        <Text variant="ui" className="text-white/40 tracking-[0.4em]">Atmosphere Selection</Text>
+                        <div className="flex gap-8">
+                            {contentConfig.product.variants.map((v) => (
                                 <button
-                                    key={color.id}
-                                    onClick={() => setSelectedColor(color)}
+                                    key={v.id}
+                                    onClick={() => setSelectedVariant(v)}
                                     className={cn(
-                                        "w-12 h-12 rounded-full border-2 transition-all p-1",
-                                        selectedColor.id === color.id ? "border-[var(--color-primary)] scale-110" : "border-transparent hover:border-white/20"
+                                        "w-16 h-16 rounded-full border-2 transition-all p-1 group relative",
+                                        selectedVariant.id === v.id ? "border-[var(--color-primary)] scale-110" : "border-transparent hover:border-white/20"
                                     )}
                                 >
-                                    <div className="w-full h-full rounded-full" style={{ backgroundColor: color.hex }} />
+                                    <div className="w-full h-full rounded-full shadow-inner" style={{ backgroundColor: v.hex }} />
+                                    {selectedVariant.id === v.id && (
+                                        <motion.div layoutId="glow" className="absolute -inset-2 bg-[var(--color-primary)]/10 blur-xl rounded-full -z-10" />
+                                    )}
                                 </button>
                             ))}
                         </div>
+                        <Text variant="ui" className="text-white/80 block tracking-widest">{selectedVariant.name}</Text>
                     </div>
 
-                    <div className="pt-8">
-                        <Button variant="outline" size="lg" className="w-full lg:w-auto">
+                    <div className="pt-24">
+                        <Button
+                            variant="outline"
+                            size="lg"
+                            className="px-12 font-black tracking-[0.3em]"
+                            onClick={() => document.getElementById('technical-docs')?.scrollIntoView({ behavior: 'smooth' })}
+                        >
                             Technical Manifesto
                         </Button>
                     </div>
                 </div>
 
-                {/* Center/Right: Interactive Viewer */}
-                <div className="col-span-12 lg:col-span-8 relative aspect-square lg:h-[800px] flex items-center justify-center mt-12 lg:mt-0">
-                    <div className="relative w-full h-full flex items-center justify-center overflow-visible">
-
+                {/* Right Side: Interactive Viewer */}
+                <div className="col-span-12 lg:col-span-8 relative aspect-square lg:h-[900px] flex flex-col">
+                    <div
+                        className="absolute inset-0 flex items-center justify-center cursor-grab active:cursor-grabbing"
+                        onMouseDown={handleDragStart}
+                        onTouchStart={handleDragStart}
+                    >
                         <AnimatePresence mode="wait">
                             <motion.div
-                                key={selectedColor.id}
-                                initial={{ opacity: 0, x: 50, filter: "blur(20px)" }}
-                                animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-                                exit={{ opacity: 0, x: -50, filter: "blur(20px)" }}
-                                transition={{ duration: 0.8, ease: [0.76, 0, 0.24, 1] }}
-                                className="relative w-full h-full flex items-center justify-center"
+                                key={selectedVariant.id}
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 1.1 }}
+                                transition={{ duration: 1.2, ease: motionConfig.curves.apple }}
+                                className="w-full h-full relative"
                             >
-                                <img
-                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSKLjUFvaU1rLUzAJcDDRURe3Gw6ImEbdre8VFKCtF8rf23yK2LsyIpmg8ayb-gVHRZWVZK8wxB_MbVcp_Dgc3DVxIG_QDgq3HlX7wKyxlsLS72QOGpe5mMVD6iNz-SWpuxkYbBBgpRn67w8qH2hTD25hE2cx5fir_L7OY4gE-p7yxkLqZOX4D8flUfaUq1Tbb8oWyuKmJ1Q1zcpn8snCqoUtF1aj3kc8ZvPfKJH3zPnTV91UqiPghUVD6NbPn_y6yYCMM3szCm5nK"
-                                    alt="Product"
-                                    className="w-full max-w-[320px] md:max-w-[500px] lg:max-w-[700px] z-10 drop-shadow-[0_50px_50px_rgba(0,0,0,0.5)] cursor-crosshair transition-all grayscale brightness-[0.8] hover:grayscale-0 hover:brightness-100 duration-1000"
-                                />
-
-                                {/* Hotspots */}
-                                <div className="absolute top-[30%] left-[40%] group z-20">
-                                    <div className="w-3 h-3 bg-[var(--color-primary)] rounded-full hotspot-pulse cursor-pointer" />
-                                    <div className="absolute left-8 top-1/2 -translate-y-1/2 glass-panel px-6 py-3 rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-500 whitespace-nowrap translate-x-4 group-hover:translate-x-0">
-                                        <Text variant="label-serif" className="block text-[8px] tracking-[0.2em] font-sans font-black uppercase text-[var(--color-primary)]">Upper</Text>
-                                        <Text variant="ui" className="text-white/80">Breathable Matrix Mesh</Text>
-                                    </div>
-                                </div>
-
-                                <div className="absolute bottom-[35%] right-[30%] group z-20">
-                                    <div className="w-3 h-3 bg-[var(--color-primary)] rounded-full hotspot-pulse cursor-pointer" />
-                                    <div className="absolute right-8 top-1/2 -translate-y-1/2 glass-panel px-6 py-3 rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-500 whitespace-nowrap -translate-x-4 group-hover:translate-x-0 text-right">
-                                        <Text variant="label-serif" className="block text-[8px] tracking-[0.2em] font-sans font-black uppercase text-[var(--color-primary)]">Outsole</Text>
-                                        <Text variant="ui" className="text-white/80">Bio-Dynamic Foam Tech</Text>
-                                    </div>
-                                </div>
+                                {renderExplodedModel()}
                             </motion.div>
                         </AnimatePresence>
 
-                        {/* Rotation Controls */}
-                        <div className="absolute bottom-4 lg:bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-6 glass-panel px-8 py-4 rounded-full border-white/5 shadow-2xl scale-90 lg:scale-100">
-                            <button className="text-white/40 hover:text-[var(--color-primary)] transition-colors"><RotateCcw size={18} /></button>
-                            <div className="h-4 w-px bg-white/10" />
-                            <Text variant="ui" className="text-white/60 tracking-[0.4em] font-black uppercase">360° Inspection</Text>
-                            <div className="h-4 w-px bg-white/10" />
-                            <button className="text-white/40 hover:text-[var(--color-primary)] transition-colors"><RotateCw size={18} /></button>
+                        {/* Interactive technical Hotspots */}
+                        {contentConfig.features.map((feature) => (
+                            <div
+                                key={feature.id}
+                                className="absolute pointer-events-auto group z-50"
+                                style={feature.pos}
+                                onMouseEnter={() => setHoveredFeature(feature.id)}
+                                onMouseLeave={() => setHoveredFeature(null)}
+                            >
+                                <div className="w-6 h-6 bg-[var(--color-primary)] rounded-full hotspot-pulse cursor-pointer flex items-center justify-center">
+                                    <div className="w-2 h-2 bg-black rounded-full" />
+                                </div>
+
+                                <motion.div
+                                    initial={{ opacity: 0, x: 20, filter: "blur(10px)" }}
+                                    animate={{
+                                        opacity: hoveredFeature === feature.id ? 1 : 0,
+                                        x: hoveredFeature === feature.id ? 0 : 20,
+                                        filter: hoveredFeature === feature.id ? "blur(0px)" : "blur(10px)"
+                                    }}
+                                    className="absolute left-14 top-1/2 -translate-y-1/2 glass-panel p-8 rounded-2xl w-72 pointer-events-none border-l-4 border-l-[var(--color-primary)] shadow-2xl"
+                                >
+                                    <Text variant="ui" className="text-[var(--color-primary)] mb-2 block tracking-[0.4em]">{feature.label}</Text>
+                                    <Text variant="title" className="text-white mb-2 block text-2xl">{feature.title}</Text>
+                                    <Text variant="body" className="text-xs text-white/50 leading-relaxed font-sans font-medium">{feature.desc}</Text>
+                                </motion.div>
+                            </div>
+                        ))}
+
+                        {/* Floor Shadow */}
+                        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 w-3/4 h-32 bg-black/50 blur-[130px] rounded-full -z-10" />
+                    </div>
+
+                    {/* Rotation Console */}
+                    <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-12 glass-panel px-10 py-6 rounded-full z-[200] shadow-2xl backdrop-blur-3xl border-white/5">
+                        <button
+                            onClick={() => rotateBy(-15)}
+                            className="text-white/20 hover:text-[var(--color-primary)] transition-colors p-2"
+                        >
+                            <RotateCcw size={24} />
+                        </button>
+                        <div className="flex flex-col items-center">
+                            <Text variant="ui" className="text-white/40 tracking-[0.5em] whitespace-nowrap text-[9px]">
+                                360° Technical Inspection
+                            </Text>
                         </div>
+                        <button
+                            onClick={() => rotateBy(15)}
+                            className="text-white/20 hover:text-[var(--color-primary)] transition-colors p-2"
+                        >
+                            <RotateCw size={24} />
+                        </button>
                     </div>
                 </div>
-
             </div>
         </section>
     );
